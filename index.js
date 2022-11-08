@@ -55,12 +55,36 @@ async function run() {
             const cursor = reviewCollection.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews);
+        });
+
+        app.get('/review/:id', async (req, res) => {
+            const id = req.params;
+            const review = await reviewCollection.findOne({ _id: ObjectID(id) });
+            res.send(review);
         })
         app.post('/reviews', async (req, res) => {
             const review = req.body;
             const result = await reviewCollection.insertOne(review);
             res.send(result);
         });
+
+        app.patch('/review/:id', async (req, res) => {
+            // const id = req.params.id;
+            // const status = req.body.status;
+            // const query = { _id: ObjectID(id) };
+            // const updatedDoc = {
+            //     $set: {
+            //         status: status
+            //     }
+            // }
+            // const result = await reviewCollection.updateOne(query, updatedDoc);
+            // res.send(result);
+
+            const { id } = req.params;
+            const result = await reviewCollection.updateOne({ _id: ObjectID(id) }, { $set: req.body });
+            res.send(result);
+        })
+
         app.delete('/reviews/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectID(id) };
