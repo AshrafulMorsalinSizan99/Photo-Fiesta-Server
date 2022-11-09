@@ -55,7 +55,7 @@ async function run() {
 
         app.get('/allServices', async (req, res) => {
             const query = {}
-            const cursor = serviceCollection.find(query);
+            const cursor = serviceCollection.find(query, { "sort": ['datefield', 'desc'] });
             const services = await cursor.toArray();
             res.send(services)
         })
@@ -66,6 +66,15 @@ async function run() {
             const service = await serviceCollection.findOne(query);
             res.send(service);
         });
+
+        app.get('/services/:serviceId', async (req, res) => {
+            const id = req.params;
+            const query = { service_id: id };
+
+            const cursor = reviewCollection.find(query);
+            const services = await cursor.toArray();
+            res.send(services);
+        })
 
         app.get('/reviews', verifyJWT, async (req, res) => {
             // console.log(req.headers);
