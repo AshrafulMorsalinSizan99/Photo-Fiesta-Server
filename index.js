@@ -1,6 +1,7 @@
 const express = require('express');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { ObjectID } = require('bson');
 require('dotenv').config();
 
@@ -18,12 +19,34 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        res.send({ message: 'unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+        if (err) {
+            res.send({ message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 async function run() {
     try {
         const serviceCollection = client.db('photoFiesta').collection('services');
         const reviewCollection = client.db('photoFiesta').collection('reviews');
 
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+            res.send({ token });
+        })
+
         app.get('/services', async (req, res) => {
+
             const query = {}
             const cursor = serviceCollection.find(query);
             const services = await cursor.limit(3).toArray();
@@ -44,7 +67,8 @@ async function run() {
             res.send(service);
         });
 
-        app.get('/reviews', async (req, res) => {
+        app.get('/reviews', verifyJWT, async (req, res) => {
+            // console.log(req.headers);
             // console.log(req.query.email);
             let query = {};
             if (req.query.email) {
