@@ -22,7 +22,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-        res.send({ message: 'unauthorized access' })
+        res.status(401).send({ message: 'unauthorized access' })
     }
     const token = authHeader.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
@@ -69,6 +69,7 @@ async function run() {
 
         app.get('/services/:serviceId', async (req, res) => {
             const id = req.params;
+            console.log(id)
             const query = { service_id: id };
 
             const cursor = reviewCollection.find(query);
@@ -90,8 +91,8 @@ async function run() {
             res.send(reviews);
         });
 
-        app.get('/review/:id', async (req, res) => {
-            const id = req.params;
+        app.get('/reviews/:id', async (req, res) => {
+            const { id } = req.params;
             const review = await reviewCollection.findOne({ _id: ObjectID(id) });
             res.send(review);
         })
@@ -107,7 +108,7 @@ async function run() {
             res.send(result);
         })
 
-        app.patch('/review/:id', async (req, res) => {
+        app.patch('/reviews/:id', async (req, res) => {
             // const id = req.params.id;
             // const status = req.body.status;
             // const query = { _id: ObjectID(id) };
@@ -120,8 +121,12 @@ async function run() {
             // res.send(result);
 
             const { id } = req.params;
+
+
             const result = await reviewCollection.updateOne({ _id: ObjectID(id) }, { $set: req.body });
-            res.send(result);
+            if (result.matchedCount) {
+                res.send(result);
+            }
         })
 
         app.delete('/reviews/:id', async (req, res) => {
